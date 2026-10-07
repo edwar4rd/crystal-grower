@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Full Ingot Puller Simulator</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Full ingot puller simulator</div>
+  <div></div>
+  <div class="right">
+    <a class="btn ghost" href="index.html">&larr; Poster</a>
+    <button class="btn ghost" id="theme" title="Light / dark">&#9680;</button>
+  </div>
+</header>
+
+<main class="sandbox">
+  <aside class="panel">
+    <h3>Scenarios</h3>
+    <div class="presets">
+      <button class="btn ghost" data-preset="golden">&#127919; Golden run: defect-free</button>
+      <button class="btn ghost" data-preset="speed">&#9889; Speed trap: pulled too fast</button>
+      <button class="btn ghost" data-preset="freeze">&#10052; Freeze-over: pulled too slow</button>
+      <button class="btn ghost" data-preset="void">&#9679; Void-rich core: v/G too high</button>
+      <button class="btn ghost" data-preset="rim">&#9675; Loop-rich rim: v/G too low</button>
+    </div>
+
+    <h3>Controls</h3>
+    <label class="ctl pull"><span class="name">Pull rate v</span><output id="ovp"></output>
+      <input type="range" id="vp" min="0.05" max="1.0" step="any"></label>
+    <label class="ctl heat"><span class="name">Heater power (G<sub>l</sub>)</span><output id="ogl"></output>
+      <input type="range" id="gl" min="0.3" max="1.0" step="any"></label>
+    <label class="ctl grad"><span class="name">Heat shield (G)</span><output id="og0"></output>
+      <input type="range" id="g0" min="2" max="4.5" step="any"></label>
+    <label class="ctl"><span class="name">Time speed</span><output id="osp"></output>
+      <input type="range" id="sp" min="5" max="80" step="1" value="30"></label>
+    <label class="switch"><input type="checkbox" id="adc"> Auto diameter control</label>
+    <div class="btnrow">
+      <button class="btn" id="play">&#10074;&#10074; Pause</button>
+      <button class="btn ghost" id="reset">&#8634; Reset</button>
+    </div>
+
+
+    <details>
+      <summary>Model assumptions</summary>
+      <p>Teaching model with realistic numbers, not a full furnace simulation.</p>
+      <p>Growth rate from the interface heat balance k<sub>s</sub>G<sub>s</sub> &minus; k<sub>l</sub>G<sub>l</sub> = &rho;L&middot;v<sub>g</sub>. Pulling faster than v<sub>g</sub> raises the meniscus, which narrows the crystal.</p>
+      <p>Thin crystals radiate heat away more easily: G<sub>s</sub> = G(1 + c/R).</p>
+      <p>Gradient is 12 % steeper at the edge than at the centre. Defect-free means v/G within &plusmn;12 % of 0.13 mm&sup2;/(min&middot;K).</p>
+      <p>Melt level fixed (crucible is lifted), no rotation, oxygen or dopants. Time runs far faster than real life.</p>
+    </details>
+  </aside>
+
+  <section class="fig">
+    <canvas id="cv"></canvas>
+    <dl class="stats overlay">
+      <dt>Diameter</dt><dd id="rD"></dd>
+      <dt>Growth rate v<sub>g</sub></dt><dd id="rVg"></dd>
+      <dt>Pull rate v</dt><dd id="rVp"></dd>
+      <dt>&xi;/&xi;<sub>crit</sub> centre / edge</dt><dd id="rXi"></dd>
+      <dt>Crystal</dt><dd id="rLen"></dd>
+      <dt>Defects now</dt><dd id="rDef"></dd>
+    </dl>
+    <div class="banner" id="banner" hidden></div>
+    <div class="legend"><span><i class="sw V"></i>vacancy voids (COPs)</span><span><i class="sw DF"></i>defect-free</span><span><i class="sw I"></i>interstitial loops</span></div>
+  </section>
+</main>
+
+<script src="js/physics.js"></script>
+<script src="js/common.js"></script>
+<script src="js/render.js"></script>
+<script src="js/sandbox.js"></script>
+</body>
+</html>

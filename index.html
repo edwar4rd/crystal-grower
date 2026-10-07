@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Growing a Silicon Ingot: Czochralski Poster</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Czochralski silicon growth</div>
+  <nav class="dots" id="dots"></nav>
+  <div class="right">
+    <a class="btn ghost" href="sandbox.html">Full simulator &rarr;</a>
+    <button class="btn ghost" id="theme" title="Light / dark">&#9680;</button>
+  </div>
+</header>
+
+<!-- 0 · Intro -->
+<section class="card" id="c0">
+  <div class="col text">
+    <p class="kicker">IntroSemi &middot; Interactive poster</p>
+    <h1>How do pull rate and temperature gradient shape a growing silicon crystal?</h1>
+    <p class="lead">A seed crystal is dipped into 1414&nbsp;&deg;C molten silicon and slowly pulled up. The crystal that follows is only as good as the conditions at its growing edge.</p>
+    <ol class="lead" style="padding-left:1.2rem">
+      <li>A <b>thin neck</b> removes dislocations</li>
+      <li><b>Diameter</b> is a heat balance</li>
+      <li><b>Defects</b> depend on v/G</li>
+    </ol>
+    <p class="hint">Press <kbd>&rarr;</kbd> to start</p>
+  </div>
+  <div class="col fig">
+    <canvas id="cv0"></canvas>
+    <div class="legend"><span><i class="sw V"></i>vacancy voids</span><span><i class="sw DF"></i>defect-free</span><span><i class="sw I"></i>interstitial loops</span></div>
+  </div>
+</section>
+
+<!-- 1 · Dash neck -->
+<section class="card" id="c1">
+  <div class="col text">
+    <h2><span class="num">1</span>The thin neck</h2>
+    <p class="lead">Dipping the seed causes thermal shock, which creates dislocations. Pull fast at first: the crystal gets thin and the dislocations <b>escape through its surface</b>.</p>
+    <label class="ctl pull"><span class="name">Pull rate v</span><output id="o1"></output>
+      <input type="range" id="s1" min="1" max="6" step="any" value="4"></label>
+    <div class="readout">Neck diameter: <b id="r1d"></b> &nbsp;&middot;&nbsp; gradient <b class="t1">G</b> in neck: <b id="r1g"></b></div>
+    <p class="verdict" id="r1v"></p>
+    <p class="note">Why can a thin crystal be pulled fast? It loses heat from its sides more easily, so G is steeper (see card 2).</p>
+  </div>
+  <div class="col fig">
+    <canvas id="cv1"></canvas>
+    <div class="legend"><span><i class="sw dis"></i>dislocation line</span><span>(neck width exaggerated)</span></div>
+  </div>
+</section>
+
+<!-- 2 · Diameter -->
+<section class="card" id="c2">
+  <div class="col text">
+    <h2><span class="num">2</span>Diameter is a heat balance</h2>
+    <div class="eq"><span class="t1">k<sub>s</sub>G<sub>s</sub></span> &minus; <span class="t2">k<sub>l</sub>G<sub>l</sub></span> = <span class="t3">&rho;L&middot;v</span></div>
+    <div class="eqcap">
+      <span class="t1"><b>heat up the crystal</b></span>
+      <span class="t2"><b>heat from the melt</b></span>
+      <span class="t3"><b>latent heat of freezing</b></span>
+    </div>
+    <label class="ctl pull"><span class="name">Pull rate v</span><output id="o2a"></output>
+      <input type="range" id="s2a" min="0.2" max="0.9" step="any"></label>
+    <label class="ctl heat"><span class="name">Heater power (melt gradient G<sub>l</sub>)</span><output id="o2b"></output>
+      <input type="range" id="s2b" min="0.4" max="0.9" step="any"></label>
+    <canvas class="minicanvas" id="cv2b"></canvas>
+    <div class="btnrow"><button class="btn ghost" id="reset2">&#8634; Reset</button></div>
+    <p class="note">Simplified teaching model, see the full simulator for assumptions.</p>
+  </div>
+  <div class="col fig">
+    <canvas id="cv2"></canvas>
+    <div class="banner" id="b2" hidden></div>
+    <div class="legend"><span><i class="sw V"></i>voids</span><span><i class="sw DF"></i>defect-free</span><span><i class="sw I"></i>loops</span></div>
+  </div>
+</section>
+
+<!-- 3 · Defects -->
+<section class="card" id="c3">
+  <div class="col text">
+    <h2><span class="num">3</span>Defects depend on v/G</h2>
+    <div class="eq">&xi; = <span class="t3">v</span> / <span class="t1">G</span></div>
+    <div class="eqcap"><span class="t3"><b>pull rate</b></span><span class="t1"><b>temperature gradient at the interface</b></span></div>
+    <label class="ctl pull"><span class="name">Pull rate v</span><output id="o3a"></output>
+      <input type="range" id="s3a" min="0.2" max="0.7" step="any"></label>
+    <label class="ctl grad"><span class="name">Gradient G (heat shield)</span><output id="o3b"></output>
+      <input type="range" id="s3b" min="2" max="4.5" step="any"></label>
+    <div class="gauge" id="gauge">
+      <span class="mk" id="mkC">C</span><span class="mk" id="mkE">E</span>
+      <span class="zl" style="left:0">slow &rarr; interstitials</span>
+      <span class="zl" style="left:31%">ideal</span>
+      <span class="zl" style="right:0">fast &rarr; vacancies</span>
+    </div>
+    <p class="verdict" id="r3v"></p>
+    <div class="btnrow">
+      <button class="btn ghost" data-p3="fast">Too fast</button>
+      <button class="btn ghost" data-p3="ok">Just right</button>
+      <button class="btn ghost" data-p3="slow">Too slow</button>
+    </div>
+    <p class="note">C = wafer centre, E = wafer edge. The edge is cooled harder (larger G), so its ξ is lower. That is why a ring can appear.</p>
+  </div>
+  <div class="col fig">
+    <canvas id="cv3"></canvas>
+    <div class="legend"><span><i class="sw V"></i>vacancy voids (COPs)</span><span><i class="sw DF"></i>defect-free</span><span><i class="sw I"></i>interstitial loops</span></div>
+  </div>
+</section>
+
+<div class="foot">&larr; &rarr; to navigate</div>
+<div class="pager">
+  <button class="btn ghost" id="prev">&lsaquo;</button>
+  <button class="btn ghost" id="next">&rsaquo;</button>
+</div>
+
+<script src="js/physics.js"></script>
+<script src="js/common.js"></script>
+<script src="js/render.js"></script>
+<script src="js/poster.js"></script>
+</body>
+</html>
