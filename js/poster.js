@@ -13,9 +13,12 @@
   }
 
   /* ---------- card 0: intro, ingot growing quietly ---------- */
-  var sim0 = new Phys.Sim({ fixed: true, prefill: 'body', bodyLen: 420 });
+  var sim0 = new Phys.Sim({ fixed: true, prefill: 'full' });
   var c0 = {
-    tick: function (dt) { sim0.advance(dt * 30); },
+    tick: function (dt) {
+      sim0.advance(dt * 18);
+      if (sim0.z > 415) sim0.reset();
+    },
     draw: function () { Render.draw($('cv0'), sim0, {}); }
   };
 
@@ -80,8 +83,6 @@
 
       ctx.fillStyle = col.card; ctx.textAlign = 'center';
       ctx.fillText('seed', cx, h * 0.03 + (yTop - h * 0.03) / 2 - 2);
-      ctx.fillStyle = col.ink; ctx.textAlign = 'left';
-      ctx.fillText('melt  1414 \u00B0C', 14, yMelt + (h - yMelt) / 2);
       ctx.fillStyle = col.mute;
       ctx.fillText('\u2193 shoulder and body grow from here', cx + 30 * sx > w - 270 ? 14 : cx + 8 * sx, yFl - fs * 1.5);
 

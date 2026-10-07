@@ -130,23 +130,27 @@
       });
       ctx.stroke();
     });
-    ctx.beginPath(); ctx.moveTo(cx, Math.max(0, yTopMost)); ctx.lineTo(cx, yI);
-    ctx.lineWidth = 1; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
-    if (yTopMost > 2) {                       // seed holder + cable
-      ctx.fillStyle = col.mute; ctx.fillRect(cx - 7, yTopMost - 10, 14, 10);
-      ctx.fillRect(cx - 1.5, 0, 3, yTopMost - 10);
+    var zSeed = (segs.length > 0) ? segs[0].z : 0;
+    var seedY = yI - (zNow - zSeed) * s;
+
+    // Centerline
+    ctx.beginPath();
+    ctx.moveTo(cx, Math.max(0, seedY));
+    ctx.lineTo(cx, yI);
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Seed holder + pull cable (smoothly clips at top boundary)
+    if (seedY > 0) {
+      ctx.fillStyle = col.mute;
+      ctx.fillRect(cx - 7, seedY - 10, 14, 10);
+      if (seedY > 10) {
+        ctx.fillRect(cx - 1.5, 0, 3, seedY - 10);
+      }
     }
 
-    // ---- labels ----
-    ctx.fillStyle = col.ink; ctx.textBaseline = 'middle';
-    ctx.textAlign = 'left';
-    ctx.fillText('melt  1414 \u00B0C', cx - P.Rcruc * s + 14, (yM + bottomY) / 2);
-    ctx.fillStyle = col.mute;
-    ctx.textAlign = 'left';
-    ctx.fillText('heat shield', cx - P.Rcruc * s + 4, yM - 150 * s);
-    ctx.textAlign = 'right';
-    ctx.fillText('heater', w - 6, yM - 20 * s - fs * 1.3);
-    ctx.textAlign = 'left';
     if (opts.cutLabels !== false) {
       ctx.textAlign = 'center'; ctx.fillStyle = col.mute;
       var rr = Math.max(Rpx, 40);
