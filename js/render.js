@@ -145,7 +145,9 @@
         pts[k].slope = (Math.abs(dy) > 0.001) ? (dr / dy) : 0;
       }
 
-      // 2. Render Left Surface with full 3D normal shading (Nx, Ny, Nz)
+      var hasCut = (opts.crossSection !== false);
+
+      // 2. Render Ingot 3D Surface
       // Light vector L from upper-left-front: (-0.42, -0.62, 0.66)
       // Trapezoids overlap by 0.8px vertically to eliminate subpixel anti-aliasing seam artifacts.
       for (var k = 0; k < pts.length - 1; k++) {
@@ -160,60 +162,83 @@
         var slopeTilt = Phys.clamp(avgSlope * 0.75, -0.45, 0.45);
         var normLen = Math.sqrt(1 + avgSlope * avgSlope);
 
-        var grad = ctx.createLinearGradient(cx - rMax, 0, cx, 0);
-        // Function to compute lit RGB with metallic base
-        function shadeRGB(u, sinTh, cosTh) {
-          var dot = (0.42 * sinTh + 0.62 * (avgSlope / normLen) + 0.66 * (cosTh / normLen));
-          var spec = Math.pow(Math.max(0, (0.24 * sinTh + 0.35 * (avgSlope / normLen) + 0.90 * (cosTh / normLen))), 14);
-          var light = Phys.clamp(0.48 + 0.45 * dot + 0.35 * spec + slopeTilt * 0.3, 0.2, 1.35);
+        function shadeRGB(u) {
+          // u: position fraction from -1 (left silhouette) to +1 (right silhouette)
+          var sinTh = u;
+          var cosTh = Math.sqrt(Math.max(0, 1 - u * u));
+          var dot = (-0.42 * sinTh + 0.62 * (avgSlope / normLen) + 0.66 * (cosTh / normLen));
+          var spec = Math.pow(Math.max(0, -0.24 * sinTh + 0.35 * (avgSlope / normLen) + 0.90 * (cosTh / normLen)), 14);
+          var light = Phys.clamp(0.44 + 0.45 * dot + 0.38 * spec + slopeTilt * 0.3, 0.18, 1.35);
           var red = Math.round(Phys.clamp(135 * light, 40, 250));
           var grn = Math.round(Phys.clamp(145 * light, 45, 252));
           var blu = Math.round(Phys.clamp(160 * light, 55, 255));
           return 'rgb(' + red + ',' + grn + ',' + blu + ')';
         }
 
-        grad.addColorStop(0.0, shadeRGB(1.0, 1.0, 0.0));       // outer edge (darker grazing rim)
-        grad.addColorStop(0.25, shadeRGB(0.75, 0.75, 0.66));   // mid-rim
-        grad.addColorStop(0.55, shadeRGB(0.45, 0.45, 0.89));   // specular highlight strip
-        grad.addColorStop(0.85, shadeRGB(0.15, 0.15, 0.99));   // mid-face
-        grad.addColorStop(1.0, shadeRGB(0.0, 0.0, 1.0));       // centerline
+        if (hasCut) {
+          var grad = ctx.createLinearGradient(cx - rMax, 0, cx, 0);
+          grad.addColorStop(0.0, shadeRGB(-1.0));       // outer left edge (grazing rim)
+          grad.addColorStop(0.25, shadeRGB(-0.75));     // mid-rim
+          grad.addColorStop(0.55, shadeRGB(-0.45));     // specular highlight strip
+          grad.addColorStop(0.85, shadeRGB(-0.15));     // mid-face
+          grad.addColorStop(1.0, shadeRGB(0.0));        // centerline
 
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(cx, yBot);
-        ctx.lineTo(cx - rBot, yBot);
-        ctx.lineTo(cx - rTop, yTop);
-        ctx.lineTo(cx, yTop);
-        ctx.closePath();
-        ctx.fill();
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.moveTo(cx, yBot);
+          ctx.lineTo(cx - rBot, yBot);
+          ctx.lineTo(cx - rTop, yTop);
+          ctx.lineTo(cx, yTop);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          var grad = ctx.createLinearGradient(cx - rMax, 0, cx + rMax, 0);
+          grad.addColorStop(0.0, shadeRGB(-1.0));       // outer left edge
+          grad.addColorStop(0.15, shadeRGB(-0.7));      // left mid-rim
+          grad.addColorStop(0.28, shadeRGB(-0.44));     // specular highlight strip
+          grad.addColorStop(0.50, shadeRGB(0.0));       // center front meridian
+          grad.addColorStop(0.75, shadeRGB(0.5));       // right midtone falloff
+          grad.addColorStop(1.0, shadeRGB(1.0));        // outer right terminator
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.moveTo(cx - rBot, yBot);
+          ctx.lineTo(cx + rBot, yBot);
+          ctx.lineTo(cx + rTop, yTop);
+          ctx.lineTo(cx - rTop, yTop);
+          ctx.closePath();
+          ctx.fill();
+        }
       }
 
-      // 3. Render Right Half (Cross-Section) with depth & subtle crystalline sheen
-      function band(fa, fb, fill) {
-        ctx.beginPath();
-        for (var k = 0; k < pts.length; k++) {
-          var p = pts[k], x = cx + fa(p) * p.r;
-          if (k === 0) ctx.moveTo(x, p.y); else ctx.lineTo(x, p.y);
+      if (hasCut) {
+        // 3. Render Right Half (Cross-Section) with depth & subtle crystalline sheen
+        function band(fa, fb, fill) {
+          ctx.beginPath();
+          for (var k = 0; k < pts.length; k++) {
+            var p = pts[k], x = cx + fa(p) * p.r;
+            if (k === 0) ctx.moveTo(x, p.y); else ctx.lineTo(x, p.y);
+          }
+          for (var k = pts.length - 1; k >= 0; k--) {
+            var q = pts[k]; ctx.lineTo(cx + fb(q) * q.r, q.y);
+          }
+          ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
         }
-        for (var k = pts.length - 1; k >= 0; k--) {
-          var q = pts[k]; ctx.lineTo(cx + fb(q) * q.r, q.y);
-        }
-        ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+        var f0 = function () { return 0; }, f1 = function () { return 1; };
+        band(f0, f1, col.I);
+        band(f0, function (p) { return p.f; }, col.DF);
+        band(f0, function (p) { return p.v; }, col.V);
+
+        // Subtle ambient depth gradient over cross-section to unify lighting with the exterior
+        var csGrad = ctx.createLinearGradient(cx, 0, cx + P.Rt * s, 0);
+        csGrad.addColorStop(0, 'rgba(0,0,0,0.06)');
+        csGrad.addColorStop(0.7, 'rgba(255,255,255,0.04)');
+        csGrad.addColorStop(1, 'rgba(0,0,0,0.08)');
+        band(f0, f1, csGrad);
+
+        // Metallic outer rim on the right edge (shows cutaway is inside the cylindrical shell)
+        band(function (p) { return Math.max(0, 1 - 2.5 / Math.max(p.r, 1)); }, f1, '#94a3b8');
       }
-      var f0 = function () { return 0; }, f1 = function () { return 1; };
-      band(f0, f1, col.I);
-      band(f0, function (p) { return p.f; }, col.DF);
-      band(f0, function (p) { return p.v; }, col.V);
-
-      // Subtle ambient depth gradient over cross-section to unify lighting with the exterior
-      var csGrad = ctx.createLinearGradient(cx, 0, cx + P.Rt * s, 0);
-      csGrad.addColorStop(0, 'rgba(0,0,0,0.06)');
-      csGrad.addColorStop(0.7, 'rgba(255,255,255,0.04)');
-      csGrad.addColorStop(1, 'rgba(0,0,0,0.08)');
-      band(f0, f1, csGrad);
-
-      // Metallic outer rim on the right edge (shows cutaway is inside the cylindrical shell)
-      band(function (p) { return Math.max(0, 1 - 2.5 / Math.max(p.r, 1)); }, f1, '#94a3b8');
 
       // 4. Silicon Boule Outlines & Physical Cut Seam
       ctx.strokeStyle = col.ink; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
@@ -231,18 +256,20 @@
       ctx.quadraticCurveTo(cx, yI + 2.5, cx + Rpx, yI);
       ctx.strokeStyle = col.ink; ctx.lineWidth = 1.5; ctx.stroke();
 
-      // Clean 3D cut seam at centerline (knife-edge highlight & shadow)
-      var zSeed = (segs.length > 0) ? segs[0].z : 0;
-      var seedY = yI - (zNow - zSeed) * s;
-      var seamTop = Math.max(0, seedY);
+      if (hasCut) {
+        // Clean 3D cut seam at centerline (knife-edge highlight & shadow)
+        var zSeed = (segs.length > 0) ? segs[0].z : 0;
+        var seedY = yI - (zNow - zSeed) * s;
+        var seamTop = Math.max(0, seedY);
 
-      ctx.beginPath();
-      ctx.moveTo(cx - 0.75, seamTop); ctx.lineTo(cx - 0.75, yI);
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx - 0.75, seamTop); ctx.lineTo(cx - 0.75, yI);
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
 
-      ctx.beginPath();
-      ctx.moveTo(cx + 0.75, seamTop); ctx.lineTo(cx + 0.75, yI);
-      ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx + 0.75, seamTop); ctx.lineTo(cx + 0.75, yI);
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+      }
     }
 
     // Seed holder + pull cable (smoothly clips at top boundary)
@@ -254,7 +281,7 @@
       }
     }
 
-    if (opts.cutLabels !== false) {
+    if (hasCut && opts.cutLabels !== false) {
       ctx.textAlign = 'center'; ctx.fillStyle = col.mute;
       var rr = Math.max(Rpx, 40);
       ctx.fillText('\u2190 surface', cx - rr * 0.55, fs + 2);

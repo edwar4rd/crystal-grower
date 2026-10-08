@@ -145,7 +145,7 @@
   var c2 = {
     tick: function (dt) { sim2.advance(dt * 30); },
     draw: function () {
-      Render.draw($('cv2'), sim2, {});
+      Render.draw($('cv2'), sim2, { crossSection: false });
       banner(sim2, $('b2'));
       drawBalance();
     }
