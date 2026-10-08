@@ -68,7 +68,7 @@
 
   function Sim(opts) {
     opts = opts || {};
-    this.fixed = !!opts.fixed;           // fixed diameter: R pinned at target (defect demo)
+    this.fixed = !!opts.fixed;    // fixed diameter: R pinned at target (defect demo)
     this.prefill = opts.prefill || 'full';
     this.bodyLen = opts.bodyLen || 120;
     this.reset();
@@ -84,9 +84,14 @@
     this.slices = [{ z: 0, R: this.prefill === 'full' ? 2 : P.Rt, rc: this.prefill === 'full' ? 1 : rc }];
     if (this.prefill === 'full') {
       for (i = 1; i <= 60; i++) this.slices.push({ z: i, R: 2, rc: 1 });                       // dash neck
-      for (i = 1; i <= 120; i++) this.slices.push({ z: 60 + i, R: 2 + (P.Rt - 2) * i / 120, rc: 1 }); // shoulder
-      for (i = 1; i <= 40; i++) this.slices.push({ z: 180 + i, R: P.Rt, rc: rc });             // start of body
-      this.z = 220;
+      for (i = 1; i <= 120; i++) {
+        var u = i / 120;
+        var s = 0.5 * (1 - Math.cos(Math.PI * u)); // smooth S-curve crown
+        this.slices.push({ z: 60 + i, R: 2 + (P.Rt - 2) * s, rc: 1 });                         // shoulder
+      }
+      var bl = this.bodyLen || 40;
+      for (i = 1; i <= bl; i++) this.slices.push({ z: 180 + i, R: P.Rt, rc: rc });             // start of body
+      this.z = 180 + bl;
     } else {
       for (i = 1; i <= this.bodyLen; i++) this.slices.push({ z: i, R: P.Rt, rc: rc });
       this.z = this.bodyLen;
@@ -109,6 +114,10 @@
     p.vp = vp;
     if (name === 'golden' || name === 'void' || name === 'rim') p.Gl = solveGl(vp, G0, P.Rt);
     this.vp0 = vp; this.I = 0;
+    var prc = ratioC(vp, G0, P.Rt);
+    for (var j = 0; j < this.slices.length; j++) {
+      if (this.slices[j].R > 140) this.slices[j].rc = prc;
+    }
   };
 
   Sim.prototype.setADC = function (on) {

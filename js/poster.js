@@ -12,14 +12,91 @@
     else el.hidden = true;
   }
 
-  /* ---------- card 0: intro, ingot growing quietly ---------- */
-  var sim0 = new Phys.Sim({ fixed: true, prefill: 'full' });
+  /* ---------- card 0: intro, ingot growing and melting back in a continuous cycle ---------- */
+  function wobbleR(z) {
+    return 0.5 * Math.random() + 
+    0.1 * Math.sin(z * 0.23 + 1.2) + 
+    0.3 * Math.cos(z * 0.35 + 0.207);
+  }
+
+  var sim0 = new Phys.Sim({ fixed: true, prefill: 'full', bodyLen: 180 });
+  for (var wI = 0; wI < sim0.slices.length; wI++) {
+    if (sim0.slices[wI].z > 180) sim0.slices[wI].R = P.Rt + wobbleR(sim0.slices[wI].z);
+  }
+  var c0_phase = 'grow';
+  var c0_timer = 0;
+  var c0_defaultGl = sim0.p.Gl;
+
   var c0 = {
     tick: function (dt) {
-      sim0.advance(dt * 18);
-      if (sim0.z > 415) sim0.reset();
+      if (c0_phase === 'grow') {
+        sim0.p.Gl = c0_defaultGl;
+        sim0.advance(dt * 18);
+        sim0.R = P.Rt + wobbleR(sim0.z);
+        var lastSlice = sim0.slices[sim0.slices.length - 1];
+        if (lastSlice && lastSlice.z > 180) lastSlice.R = sim0.R;
+        if (sim0.z >= 390) {
+          c0_phase = 'pause_grown';
+          c0_timer = 1.8;
+        }
+      } else if (c0_phase === 'pause_grown') {
+        c0_timer -= dt;
+        if (c0_timer <= 0) c0_phase = 'melt';
+      } else if (c0_phase === 'melt') {
+        // Crucible heater glows warmer as crystal descends and melts back
+        sim0.p.Gl = c0_defaultGl + 0.22;
+        sim0.z -= dt * 65;
+        while (sim0.slices.length > 1 && sim0.slices[sim0.slices.length - 1].z > sim0.z) {
+          sim0.slices.pop();
+        }
+        // Interface diameter dynamically tracks the actual crystal cross-section entering the melt
+        if (sim0.slices.length > 0) {
+          sim0.R = sim0.slices[sim0.slices.length - 1].R;
+        }
+        if (sim0.z <= 1) {
+          sim0.z = 1;
+          sim0.R = 2;
+          c0_phase = 'pause_seed';
+          c0_timer = 1.2;
+        }
+      } else if (c0_phase === 'pause_seed') {
+        // Temperature cools back towards normal growth setting
+        sim0.p.Gl += (c0_defaultGl - sim0.p.Gl) * Math.min(1, dt * 3);
+        c0_timer -= dt;
+        if (c0_timer <= 0) {
+          sim0.reset();
+          // Seed start for next cycle
+          sim0.slices = [{ z: 0, R: 2, rc: 1 }];
+          sim0.z = 1;
+          sim0.R = 2;
+          c0_phase = 'grow_neck';
+        }
+      } else if (c0_phase === 'grow_neck') {
+        sim0.p.Gl = c0_defaultGl;
+        sim0.z += dt * 20;
+        var zi = Math.floor(sim0.z);
+        while (sim0.slices.length <= zi && sim0.slices.length <= 60) {
+          var currZ = sim0.slices.length;
+          sim0.slices.push({ z: currZ, R: 2, rc: 1 });
+        }
+        if (sim0.z >= 60) c0_phase = 'grow_shoulder';
+      } else if (c0_phase === 'grow_shoulder') {
+        sim0.p.Gl = c0_defaultGl;
+        sim0.z += dt * 18;
+        var zi2 = Math.floor(sim0.z);
+        while (sim0.slices.length <= zi2 && sim0.slices.length <= 180) {
+          var currZ2 = sim0.slices.length;
+          var u = (currZ2 - 60) / 120;
+          var s = 0.5 * (1 - Math.cos(Math.PI * u));
+          var rBase = 2 + (P.Rt - 2) * s;
+          var rW = rBase + wobbleR(currZ2) * u;
+          sim0.slices.push({ z: currZ2, R: rW, rc: 1 });
+        }
+        sim0.R = sim0.slices[sim0.slices.length - 1].R;
+        if (sim0.z >= 180) c0_phase = 'grow';
+      }
     },
-    draw: function () { Render.draw($('cv0'), sim0, {}); }
+    draw: function () { Render.draw($('cv0'), sim0, { crossSection: false }); }
   };
 
   /* ---------- card 1: the thin neck ---------- */
@@ -83,8 +160,8 @@
 
       ctx.fillStyle = col.card; ctx.textAlign = 'center';
       ctx.fillText('seed', cx, h * 0.03 + (yTop - h * 0.03) / 2 - 2);
-      ctx.fillStyle = col.mute;
-      ctx.fillText('\u2193 shoulder and body grow from here', cx + 30 * sx > w - 270 ? 14 : cx + 8 * sx, yFl - fs * 1.5);
+      ctx.fillStyle = col.ink;
+      ctx.fillText('\u2193 shoulder and body grow from here', cx, yFl - fs * 1.5);
 
       var gneck = G0 * (1 + P.c / R);
       $('r1d').textContent = (2 * R).toFixed(1) + ' mm';
@@ -97,7 +174,7 @@
   };
 
   /* ---------- card 2: diameter / heat balance ---------- */
-  var sim2 = new Phys.Sim({ prefill: 'body', bodyLen: 380 });
+  var sim2 = new Phys.Sim({ prefill: 'full', bodyLen: 160 });
   var f2a = function (v) { return v.toFixed(2) + ' mm/min'; };
   var f2b = function (v) { return v.toFixed(2) + ' K/mm'; };
   function sync2() {
@@ -152,7 +229,7 @@
   };
 
   /* ---------- card 3: defects, v/G ---------- */
-  var sim3 = new Phys.Sim({ fixed: true, prefill: 'body', bodyLen: 420 });
+  var sim3 = new Phys.Sim({ fixed: true, prefill: 'full', bodyLen: 180 });
   var f3a = function (v) { return v.toFixed(3) + ' mm/min'; };
   var f3b = function (v) { return v.toFixed(2) + ' K/mm'; };
   function sync3() {
@@ -166,6 +243,10 @@
   [].forEach.call(document.querySelectorAll('[data-p3]'), function (b) {
     b.addEventListener('click', function () {
       sim3.p.G0 = G0; sim3.p.vp = presets3[b.getAttribute('data-p3')]; sync3();
+      var prc = Phys.ratioC(sim3.p.vp, G0, P.Rt);
+      for (var j = 0; j < sim3.slices.length; j++) {
+        if (sim3.slices[j].z > 180) sim3.slices[j].rc = prc;
+      }
     });
   });
   function place(el, ratio) {

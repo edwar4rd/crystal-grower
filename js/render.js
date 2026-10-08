@@ -122,38 +122,45 @@
 
     var zNow = sim.z, segs = sim.slices, n = segs.length;
     var head = { z: zNow, R: sim.R, rc: sim.rcNow() };
-    // Collect profile points from the interface (newest) upward until off-screen.
+    var bdHead = Phys.bounds(head.rc);
     var pts = [];
-    for (var i = n; i >= 0; i--) {
-      var sl = i >= n ? head : segs[i];
-      var y = yI - (zNow - sl.z) * s, bd = Phys.bounds(sl.rc);
-      pts.push({ y: y, r: sl.R * s, v: bd.rhoV, f: bd.rhoI, z: sl.z });
+    pts.push({ y: yI, r: Rpx, v: bdHead.rhoV, f: bdHead.rhoI, z: zNow, R: sim.R });
+    for (var i = n - 1; i >= 0; i--) {
+      var sl = segs[i];
+      if (i === n - 1 && zNow - sl.z < 0.05) continue;
+      var y = yI - (zNow - sl.z) * s;
+      var bd = Phys.bounds(sl.rc);
+      pts.push({ y: y, r: sl.R * s, v: bd.rhoV, f: bd.rhoI, z: sl.z, R: sl.R });
       if (y < -10) break;
     }
 
+    var zSeed = (segs.length > 0) ? segs[0].z : 0;
+    var seedY = yI - (zNow - zSeed) * s;
+
     if (pts.length >= 2) {
-      // 1. Calculate axial slope dr/dy at each point to account for 3D normal tilt
+      // 1. Calculate physical slope dR/dz at each profile point (dimensionless and stable)
       for (var k = 0; k < pts.length; k++) {
-        var dr, dy;
+        var dR, dz;
         if (k === 0) {
-          dr = pts[0].r - pts[1].r; dy = pts[0].y - pts[1].y;
+          dR = pts[0].R - pts[1].R; dz = pts[0].z - pts[1].z;
         } else if (k === pts.length - 1) {
-          dr = pts[k - 1].r - pts[k].r; dy = pts[k - 1].y - pts[k].y;
+          dR = pts[k - 1].R - pts[k].R; dz = pts[k - 1].z - pts[k].z;
         } else {
-          dr = pts[k - 1].r - pts[k + 1].r; dy = pts[k - 1].y - pts[k + 1].y;
+          dR = pts[k - 1].R - pts[k + 1].R; dz = pts[k - 1].z - pts[k + 1].z;
         }
-        pts[k].slope = (Math.abs(dy) > 0.001) ? (dr / dy) : 0;
+        pts[k].slope = (dz > 0.05) ? Phys.clamp(dR / dz, -2, 2) : 0;
       }
 
       var hasCut = (opts.crossSection !== false);
+      var yBottomOverlap = yI + 0.7;
 
       // 2. Render Ingot 3D Surface
       // Light vector L from upper-left-front: (-0.42, -0.62, 0.66)
-      // Trapezoids overlap by 0.8px vertically to eliminate subpixel anti-aliasing seam artifacts.
+      // Trapezoids overlap upward by 0.6px to eliminate seams without bleeding downward into melt.
       for (var k = 0; k < pts.length - 1; k++) {
         var p0 = pts[k], p1 = pts[k + 1];
-        var yTop = (k === pts.length - 2) ? p1.y : p1.y - 0.8;
-        var yBot = (k === 0) ? p0.y : p0.y + 0.8;
+        var yBot = (k === 0) ? yBottomOverlap : p0.y;
+        var yTop = (k === pts.length - 2) ? p1.y : p1.y - 0.6;
         var rTop = p1.r, rBot = p0.r;
         var rMax = Math.max(rTop, rBot);
         if (rMax < 0.5) continue;
@@ -217,10 +224,13 @@
           ctx.beginPath();
           for (var k = 0; k < pts.length; k++) {
             var p = pts[k], x = cx + fa(p) * p.r;
-            if (k === 0) ctx.moveTo(x, p.y); else ctx.lineTo(x, p.y);
+            var py = (k === 0) ? yBottomOverlap : p.y;
+            if (k === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
           }
           for (var k = pts.length - 1; k >= 0; k--) {
-            var q = pts[k]; ctx.lineTo(cx + fb(q) * q.r, q.y);
+            var q = pts[k];
+            var qy = (k === 0) ? yBottomOverlap : q.y;
+            ctx.lineTo(cx + fb(q) * q.r, qy);
           }
           ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
         }
@@ -250,16 +260,14 @@
         ctx.stroke();
       });
 
-      // Curved solid-liquid interface at the melt (unifying the bottom boundary)
+      // Solid-liquid interface line across the melt boundary (unifying crystal and meniscus)
       ctx.beginPath();
       ctx.moveTo(cx - Rpx, yI);
-      ctx.quadraticCurveTo(cx, yI + 2.5, cx + Rpx, yI);
+      ctx.lineTo(cx + Rpx, yI);
       ctx.strokeStyle = col.ink; ctx.lineWidth = 1.5; ctx.stroke();
 
       if (hasCut) {
         // Clean 3D cut seam at centerline (knife-edge highlight & shadow)
-        var zSeed = (segs.length > 0) ? segs[0].z : 0;
-        var seedY = yI - (zNow - zSeed) * s;
         var seamTop = Math.max(0, seedY);
 
         ctx.beginPath();
