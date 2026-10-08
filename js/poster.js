@@ -92,6 +92,7 @@
       var v = $('r1v');
       if (survivors === 0) { v.textContent = '\u2713 All 6 dislocations escape. Clean crystal below.'; v.className = 'verdict good'; }
       else { v.textContent = '\u2717 ' + survivors + ' of 6 dislocations survive into the crystal.'; v.className = 'verdict bad'; }
+      st.flush();
     }
   };
 
@@ -139,6 +140,7 @@
     ctx.fillText(msg, w - 8, y3 + rh / 2);
     ctx.textAlign = 'left'; ctx.fillStyle = col.mute;
     ctx.fillText('(all terms shown as mm/min of crystal)', x0 + 2, h - fs * 0.6);
+    st.flush();
   }
   var c2 = {
     tick: function (dt) { sim2.advance(dt * 30); },
