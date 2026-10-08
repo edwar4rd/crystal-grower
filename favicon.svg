@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <!-- Molten silicon bath gradient -->
+    <linearGradient id="melt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="35%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <!-- 3D Metallic silicon surface (grazing left rim -> specular highlight -> face midtone) -->
+    <linearGradient id="surf" x1="20" y1="0" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="35%" stop-color="#e2e8f0"/>
+      <stop offset="70%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </linearGradient>
+
+    <!-- Dash neck clean silver gradient -->
+    <linearGradient id="neckGrad" x1="30" y1="0" x2="34" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="50%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 1. Crucible & Molten Silicon Bath -->
+  <!-- Crucible Outer Shell -->
+  <path d="M 7 45 L 7 56 Q 7 60 11 60 L 53 60 Q 57 60 57 56 L 57 45 Z" 
+        fill="#334155" stroke="#0f172a" stroke-width="1.6" stroke-linejoin="round"/>
+  <!-- Liquid Melt Interior -->
+  <path d="M 10 45 L 10 55 Q 10 57.5 13 57.5 L 51 57.5 Q 54 57.5 54 55 L 54 45 Z" 
+        fill="url(#melt)"/>
+  <line x1="10" y1="45" x2="54" y2="45" stroke="#fef08a" stroke-width="1" opacity="0.6"/>
+
+  <!-- Meniscus Foot (Amber melt rising to crystal base) -->
+  <path d="M 13 45 Q 19 45 20 38 L 44 38 Q 45 45 51 45 Z" fill="#fbbf24"/>
+
+  <!-- 4. Dash Neck (Uniform thin crystal rod between seed and shoulder) -->
+  <rect x="30" y="13" width="2" height="9" fill="url(#surf)"/>
+  <rect x="32" y="13" width="2" height="9" fill="url(#neckGrad)"/>
+  
+  
+  <!-- 2. Crystal Boule - Left Surface (x: 20 -> 32) -->
+  <path d="M 32 20 Q 25 23 20 28 L 20 38 Q 26 39.5 32 39.5 Z" fill="url(#surf)"/>
+
+  <!-- 3. Crystal Boule - Right Cutaway Defect Zones (x: 32 -> 44) -->
+  <!-- Interstitial rim (Blue) -->
+  <path d="M 32 20 Q 39 23 44 28 L 44 38 Q 38 39.5 32 39.5 Z" fill="#0072B2"/>
+  <!-- Defect-free band (Neutral silver) -->
+  <path d="M 32 20.1 Q 36.5 23 40.5 28 L 40.5 38 Q 36.5 39.5 32 39.5 Z" fill="#dfe3ea"/>
+  <!-- Vacancy void core (Orange) -->
+  <path d="M 32 20 Q 34.5 23 36.5 28 L 36.5 39 Q 34.5 39.5 32 39.5 Z" fill="#D55E00"/>
+  <!-- Metallic cylindrical shell rim on right edge -->
+  <!-- <path d="M 44 28 L 44 38 L 42.5 38 L 42.5 28 Z" fill="#94a3b8"/> -->
+
+  <!-- 5. Centerline 3D Seam (Exactly centered at x=32, perfectly aligned from neck to melt) -->
+  <!-- Subtle specular catch on the knife-edge -->
+  <!-- <line x1="31.4" y1="10" x2="31.4" y2="39.3" stroke="#ffffff" stroke-width="0.8" opacity="0.8"/> -->
+  <!-- Crisp centerline cut boundary -->
+  <line x1="32" y1="10" x2="32" y2="39.3" stroke="#0f172a" stroke-width="0.8"/>
+
+  <!-- 6. Continuous Outer Silhouette Outline -->
+  <path d="M 30 13 
+           L 30 20 
+           Q 25 23 20 28 
+           L 20 38 
+           Q 19 45 13 45 
+           L 51 45 
+           Q 45 45 44 38 
+           L 44 28 
+           Q 39 23 34 20 
+           L 34 13 
+           Z" 
+        fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- 7. Solid-Liquid Meniscus Interface Curve -->
+  <path d="M 20 38 Q 32 39.8 44 38" fill="none" stroke="#0f172a" stroke-width="1.4"/>
+
+  <!-- 8. Seed Chuck & Pull Cable (Precisely centered at x=32) -->
+  <line x1="32" y1="1.5" x2="32" y2="8" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+  <rect x="28" y="8" width="8" height="5" rx="1" fill="#1e293b" stroke="#0f172a" stroke-width="1.2"/>
+</svg>
