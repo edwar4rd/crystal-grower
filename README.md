@@ -2,7 +2,8 @@
 
 An interactive educational simulator and visual explainer exploring the physics of **Czochralski (CZ) silicon single-crystal growth** for semiconductor manufacturing.
 
-**Live Demo:** [https://edwar4rd.github.io/crystal-grower/](https://edwar4rd.github.io/crystal-grower/)
+- **GitHub Repository:** [https://github.com/edwar4rd/crystal-grower](https://github.com/edwar4rd/crystal-grower)
+- **Live Demo:** [https://edwar4rd.github.io/crystal-grower/](https://edwar4rd.github.io/crystal-grower/)
 
 ## Overview
 
